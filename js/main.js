@@ -9,7 +9,7 @@ const MAX_TICKETS = 999; // trava técnica anti-erro de digitação. NÃO é lim
 const EVENT_NAME = 'Sabores de Verão Asun';
 const VARIANT = (document.body && document.body.dataset.variant) || 'A'; // A = copy-lp.md · B = copy-lp-versao-b.md
 const LEAD_ORIGIN = 'lp-sabores-verao';
-const SHEETS_TIMEOUT_MS = 2500;
+const SHEETS_TIMEOUT_MS = 10000;
 const DUP_KEY = 'asun_sv_leads'; // telefones já enviados neste navegador (estado "duplicidade")
 
 // ===== Helpers =====
@@ -40,6 +40,25 @@ function buildWhatsAppUrl(lead) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildWhatsAppMessage(lead))}`;
 }
 
+function leadBody(lead) {
+  return JSON.stringify(lead);
+}
+
+// Mesmo corpo do fetch (text/plain). O doPost lê e.postData.contents como JSON.
+// Só entra se o fetch falhar ou estourar o timeout — um beacon em paralelo duplicaria a linha.
+function beaconLead(lead) {
+  if (typeof navigator === 'undefined' || typeof navigator.sendBeacon !== 'function') return false;
+  try {
+    return navigator.sendBeacon(
+      SHEETS_ENDPOINT,
+      new Blob([leadBody(lead)], { type: 'text/plain;charset=utf-8' })
+    );
+  } catch (err) {
+    console.warn('[sheets] sendBeacon falhou:', err);
+    return false;
+  }
+}
+
 async function sendToSheets(lead) {
   if (!SHEETS_ENDPOINT) return { skipped: true };
   const ctrl = new AbortController();
@@ -50,14 +69,15 @@ async function sendToSheets(lead) {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(lead),
+      body: leadBody(lead),
       keepalive: true,
       signal: ctrl.signal
     });
     return { ok: true };
   } catch (err) {
-    console.warn('[sheets] falha no envio do lead (seguindo para o WhatsApp):', err);
-    return { ok: false, error: err };
+    const beaconed = beaconLead(lead);
+    console.warn('[sheets] falha no envio do lead (seguindo para o WhatsApp):', err, beaconed ? 'beacon enfileirado' : 'beacon indisponível');
+    return beaconed ? { ok: true, beacon: true } : { ok: false, error: err };
   } finally {
     clearTimeout(timer);
   }
