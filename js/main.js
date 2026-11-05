@@ -64,6 +64,22 @@ async function sendToSheets(lead) {
 }
 
 function trackLead(lead) {
+  // GA4/GTM: mesmo momento do Lead da Meta. Sem telefone, nome ou e-mail.
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'generate_lead',
+    event_name: 'generate_lead',
+    currency: 'BRL',
+    value: lead.total,
+    lead_quantity: lead.quantidade,
+    num_items: lead.quantidade,
+    content_name: EVENT_NAME,
+    content_category: `LP versão ${VARIANT}`,
+    variant: lead.variante || VARIANT,
+    cashback: lead.cashback,
+    origem: lead.origem
+  });
+
   if (typeof window.fbq !== 'function') return;
   window.fbq('track', 'Lead', {
     content_name: EVENT_NAME,
@@ -230,7 +246,7 @@ function initForm() {
     const lead = validate();
     if (!lead) return;
 
-    // Duplicidade (mesmo WhatsApp já enviado neste navegador): não reenvia lead nem dispara Lead de novo
+    // Duplicidade (mesmo WhatsApp já enviado neste navegador): não reenvia lead nem dispara Lead / generate_lead de novo
     if (sentPhones().includes(lead.whatsapp)) {
       showSuccess(lead, true);
       return;
