@@ -1,5 +1,5 @@
 // ===== Configuração (troque aqui) =====
-const SHEETS_ENDPOINT = ''; // URL do Google Apps Script (Web App) — vazio = não envia pra planilha
+const SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwDSXC_xA30Yj5EqoZUb6GWUvRFN92kzwvwNO1SvsbXmQ2P18zcfFrob6SqVjVBdWa9/exec'; // Google Apps Script Web App — Leads Sabores de Verão
 const WHATSAPP_NUMBER = '5551981225612';
 const PRICE_PER_TICKET = 150;
 const CASHBACK_PER_TICKET = 75;
@@ -32,16 +32,8 @@ function formatPhone(digits) {
 
 // Template do copy-lp.md (cashback só nas lojas Asun; sem cidade)
 function buildWhatsAppMessage(lead) {
-  return [
-    'Oi! Fiz minha solicitação de reserva pro Sabores de Verão Asun (17/11, Capão da Canoa).',
-    '',
-    `Nome: ${lead.nome}`,
-    `Ingressos: ${lead.quantidade}`,
-    `Total: R$ ${fmtInt(lead.total)}`,
-    `Cashback nas lojas Asun: R$ ${fmtInt(lead.cashback)}`,
-    '',
-    'Pode confirmar a disponibilidade e me passar como faço o pagamento?'
-  ].join('\n');
+  // Texto fixo pedido pelo Luiz (soft-launch / go-live). lead fica na planilha.
+  return 'Olá, me cadastrei para fazer reserva para o evento sabores de verao. ';
 }
 
 function buildWhatsAppUrl(lead) {
